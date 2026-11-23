@@ -2,7 +2,13 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import Auth from "./components/Auth";
+import ChatHeader from "./components/ChatHeader";
+import ChatSidebar from "./components/ChatSidebar";
+import MessageList from "./components/MessageList";
+import MessageComposer from "./components/MessageComposer";
+import ConversationHeader from "./components/ConversationHeader";
 import ProfilePanel from "./profilePanel";
+import "./chatwave-ui.css";
 
 import {
   getUsers,
@@ -19,68 +25,6 @@ import "./App.css";
 const socket = io("http://localhost:5000", {
   autoConnect: false,
 });
-
-
-function formatChatTime(dateString) {
-  if (!dateString) return "";
-
-  const date = new Date(dateString);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const now = new Date();
-
-  // Compare local calendar dates
-  const today = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
-
-  const messageDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
-
-  const daysDifference = Math.round(
-    (Date.UTC(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    ) -
-      Date.UTC(
-        messageDay.getFullYear(),
-        messageDay.getMonth(),
-        messageDay.getDate()
-      )) /
-      86400000
-  );
-
-  if (daysDifference === 0) {
-    return date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-
-  if (daysDifference === 1) {
-    return "Yesterday";
-  }
-
-  if (daysDifference > 1 && daysDifference < 7) {
-    return date.toLocaleDateString([], {
-      weekday: "short",
-    });
-  }
-
-  return date.toLocaleDateString([], {
-    day: "2-digit",
-    month: "short",
-  });
-}
 
 
 function App() {
@@ -902,237 +846,34 @@ async function handleDeleteMessage(messageId) {
 
   return (
     <main className="chat-page">
-      <header className="chat-header">
-        <div className="brand-icon">C</div>
-
-        <div className="header-title">
-          <h1>ChatWave</h1>
-          <p>Real-time messaging</p>
-        </div>
-        
-
-<div className="logged-in-user">
-  <div className="logged-in-avatar">
-    {(currentUser?.username || username || "U")
-      .charAt(0)
-      .toUpperCase()}
-  </div>
-
-  <div className="logged-in-details">
-    <span className="logged-in-label">
-      Logged in as
-    </span>
-
-    <span className="logged-in-name">
-      {currentUser?.username || username}
-    </span>
-  </div>
-</div>
-
-
-        <div className="connection-status">
-          <span
-            className={
-              connected
-                ? "status-dot"
-                : "status-dot offline"
-            }
-          />
-          {connected ? "Connected" : "Reconnecting..."}
-        </div>
-
-        <button
-          className="leave-button"
-          onClick={handleLogout}
-        >
-          Log Out
-        </button>
-      </header>
+      <ChatHeader
+        currentUser={currentUser}
+        username={username}
+        connected={connected}
+        onLogout={handleLogout}
+      />
 
       <div className="chat-layout">
-        <aside className="chat-sidebar">
-          <h3>Chats</h3>
-
-          <button
-            className={`chat-item ${
-              selectedChat === "general" ? "active" : ""
-            }`}
-            onClick={openGeneralChat}
-          >
-            <span className="chat-avatar">#</span>
-            <span>General Chat</span>
-          </button>
-
-          <h4>Private Chats</h4>
-
-          {users.length === 0 && (
-            <p className="sidebar-empty">
-              No other registered users found.
-            </p>
-          )}
-
-          
-{sortedUsers.map((user) => {
-  const conversation = conversations.find((item) =>
-    item.participants.some(
-      (participant) =>
-        String(participant._id) === String(user.id)
-    )
-  );
-
-  const userIsOnline = isUserOnline(user.id);
-
-  const lastMessage = conversation?.lastMessage;
-
-  const isOwnLastMessage =
-    String(lastMessage?.senderId) ===
-    String(activeUserId);
-
-  const previewText = lastMessage
-    ? `${
-        isOwnLastMessage ? "You: " : ""
-      }${lastMessage.text}`
-    : "No messages yet";
-
-  return (
-    <button
-      key={user.id}
-      className={`chat-item conversation-item ${
-        selectedChat === conversation?._id
-          ? "active"
-          : ""
-      }`}
-      onClick={() => openPrivateChat(user)}
-    >
-     
-<span className="avatar-wrapper">
-  <span className="chat-avatar">
-    {user.username.charAt(0).toUpperCase()}
-  </span>
-
-  <span
-    className={`presence-dot ${
-      userIsOnline ? "online" : "offline"
-    }`}
-    title={userIsOnline ? "Online" : "Offline"}
-  />
-</span>
-
-
-      <span className="conversation-info">
-        <span className="conversation-top">
-          <span className="conversation-name">
-            {user.username}
-          </span>
-
-          {conversation?.lastMessageAt && (
-            <span className="conversation-time">
-              {formatChatTime(
-                conversation.lastMessageAt
-              )}
-            </span>
-          )}
-        </span>
-
-        
-<span className="conversation-bottom">
-  <span
-  className={`conversation-preview ${
-    conversation?.unreadCount > 0 ? "has-unread" : ""
-  }`}
->
-  {previewText}
-</span>
-
-  {conversation?.unreadCount > 0 && (
-    <span className="unread-badge">
-      {conversation.unreadCount > 99
-        ? "99+"
-        : conversation.unreadCount}
-    </span>
-  )}
-</span>
-
-      </span>
-    </button>
-  );
-})}
-
-
-         <div className="sidebar-profile-footer">
-    <button
-      type="button"
-      className="sidebar-profile-button"
-      onClick={() => setShowProfile(true)}
-    >
-      <span className="sidebar-profile-avatar">
-        {(currentUser?.username || username || "U")
-          .charAt(0)
-          .toUpperCase()}
-      </span>
-
-      <span className="sidebar-profile-details">
-        <strong>
-          {currentUser?.username || username}
-        </strong>
-        <small>View / Edit Profile</small>
-      </span>
-
-      <span className="sidebar-profile-settings">
-        ⚙
-      </span>
-    </button>
-  </div>
-        </aside>
-
-        <section className="chat-content">
-          <div className="conversation-heading">
-            <div>
-              <h2>
-                {selectedChat === "general"
-                  ? "General Chat"
-                  : selectedPartner?.username ||
-                    "Private Chat"}
-              </h2>
-               
-
-<div className="chat-header-user">
-  {selectedChat !== "general" &&
-    selectedConversation && (
-      <div
-        className={`chat-presence-status ${
-          isUserOnline(selectedPartner?._id)
-            ? "online"
-            : "offline"
-        }`}
-      >
-        <span
-          className={`header-presence-dot ${
-            isUserOnline(selectedPartner?._id)
-              ? "online"
-              : "offline"
-          }`}
+        <ChatSidebar
+          username={username}
+          currentUser={currentUser}
+          users={users}
+          conversations={conversations}
+          sortedUsers={sortedUsers}
+          selectedChat={selectedChat}
+          activeUserId={activeUserId}
+          isUserOnline={isUserOnline}
+          onOpenGeneralChat={openGeneralChat}
+          onOpenPrivateChat={openPrivateChat}
+          onOpenProfile={() => setShowProfile(true)}
         />
 
-        <span>
-          {isUserOnline(selectedPartner?._id)
-            ? "Online"
-            : "Offline"}
-        </span>
-      </div>
-    )}
-</div>
-
-
-              {/* <p>Signed in as {username}</p> */}
-            </div>
-
-            <span className="chat-label">
-              {selectedChat === "general"
-                ? "Public Room"
-                : "Private Chat"}
-            </span>
-          </div>
+        <section className="chat-content">
+          <ConversationHeader
+            selectedChat={selectedChat}
+            selectedPartner={selectedPartner}
+            isPartnerOnline={isUserOnline(selectedPartner?._id)}
+          />
 
           {error && (
             <div className="chat-error">
@@ -1146,249 +887,37 @@ async function handleDeleteMessage(messageId) {
             </div>
           )}
 
-          <div className="message-list">
-            {loadingChat ? (
-              <p className="empty-chat">
-                Loading conversation...
-              </p>
-            ) : visibleMessages.length === 0 ? (
-              <p className="empty-chat">
-                No messages yet. Start a conversation!
-              </p>
-            ) : (
-              visibleMessages.map((message) => {
-                const isOwnMessage =
-                  selectedChat === "general"
-                    ? message.sender === username
-                    : String(message.senderId) ===
-                      String(activeUserId);
+          <MessageList
+            selectedChat={selectedChat}
+            visibleMessages={visibleMessages}
+            loadingChat={loadingChat}
+            username={username}
+            activeUserId={activeUserId}
+            typingUser={typingUser}
+            messagesEndRef={messagesEndRef}
+            messageMenuId={messageMenuId}
+            editingMessageId={editingMessageId}
+            editingText={editingText}
+            messageActionLoading={messageActionLoading}
+            setMessageMenuId={setMessageMenuId}
+            setEditingText={setEditingText}
+            onStartEditing={startEditingMessage}
+            onCancelEditing={() => {
+              setEditingMessageId(null);
+              setEditingText("");
+            }}
+            onSaveEdited={handleSaveEditedMessage}
+            onDeleteMessage={handleDeleteMessage}
+          />
 
-                const messageId =
-                  message.id || message._id;
-
-                const senderName =
-                  typeof message.sender === "object"
-                    ? message.sender.username
-                    : message.sender;
-
-                return (
-                  <div
-                    key={messageId}
-                    className={`message-row ${
-                      isOwnMessage ? "own" : ""
-                    }`}
-                  >
-                    
-<div className="message-bubble">
-
-  {/* Sender names help distinguish participants in general chat. */}
-  {selectedChat === "general" && (
-    <span className="message-sender">
-      {isOwnMessage ? "You" : senderName}
-    </span>
-  )}
-
-  {/* Edit / Delete menu - only for my private messages */}
-  {selectedChat !== "general" &&
-    isOwnMessage &&
-    !message.deleted && (
-      <div className="message-actions">
-        <button
-          type="button"
-          className="message-menu-button"
-          onClick={() =>
-            setMessageMenuId(
-              messageMenuId === messageId
-                ? null
-                : messageId
-            )
-          }
-        >
-          ⋯
-        </button>
-
-        {messageMenuId === messageId && (
-          <div className="message-actions-dropdown">
-            <button
-              type="button"
-              onClick={() =>
-                startEditingMessage(message)
-              }
-            >
-              ✏️ Edit
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                handleDeleteMessage(messageId)
-              }
-            >
-              🗑 Delete
-            </button>
-          </div>
-        )}
-      </div>
-    )}
-
-  {/* Message text / editing form */}
-  {message.deleted ? (
-    <p className="deleted-message">
-      This message was deleted
-    </p>
-  ) : editingMessageId === messageId ? (
-    <div className="message-edit-form">
-      <textarea
-        value={editingText}
-        onChange={(event) =>
-          setEditingText(event.target.value)
-        }
-        maxLength={5000}
-        rows={2}
-      />
-
-      <div className="message-edit-buttons">
-        <button
-          type="button"
-          onClick={() =>
-            handleSaveEditedMessage(messageId)
-          }
-          disabled={
-            messageActionLoading ||
-            !editingText.trim()
-          }
-        >
-          {messageActionLoading
-            ? "Saving..."
-            : "Save"}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setEditingMessageId(null);
-            setEditingText("");
-          }}
-          disabled={messageActionLoading}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  ) : (
-    <p>
-      {message.text}
-
-      {message.edited && (
-        <span className="edited-label">
-          {" "}(edited)
-        </span>
-      )}
-    </p>
-  )}
-
-  {/* Existing timestamp and read receipts */}
-  <div className="message-footer">
-    <span className="message-time">
-      {message.time ||
-        (message.createdAt
-          ? new Date(
-              message.createdAt
-            ).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "")}
-    </span>
-
-    {selectedChat !== "general" &&
-      isOwnMessage && (
-        <span
-          className={`message-receipt ${
-            message.read === true
-              ? "is-read"
-              : "is-sent"
-          }`}
-          title={
-            message.read === true
-              ? "Read by recipient"
-              : "Saved to server"
-          }
-        >
-          <span className="receipt-icon">
-            {message.read === true
-              ? "✓✓"
-              : "✓"}
-          </span>
-
-          <span>
-            {message.read === true
-              ? "Read"
-              : "Sent"}
-          </span>
-        </span>
-      )}
-  </div>
-
-</div>
-                  </div>
-                );
-              })
-            )}
-            
-            
-{selectedChat !== "general" &&
-  typingUser &&
-  String(typingUser.conversationId) ===
-    String(selectedChat) && (
-    <div className="typing-indicator">
-      <div className="typing-dots">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-
-      <span className="typing-text">
-        {typingUser.username} is typing...
-      </span>
-    </div>
-  )}
-
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form
-            className="message-form"
-            onSubmit={sendMessage}
-          >           
-<div className="message-composer">            
-<input
-  type="text"
-  placeholder={
-    selectedChat === "general"
-      ? "Message everyone..."
-      : "Type a private message..."
-  }
-  value={messageInput}
-  maxLength={2000}
-  onChange={handleMessageInputChange}
-  disabled={!connected || loadingChat}
-/>
-
-
-            <button
-              type="submit"
-              disabled={
-                !connected ||
-                !messageInput.trim() ||
-                loadingChat
-              }
-            >
-              Send
-            </button>
-</div>
-          </form>
+          <MessageComposer
+            selectedChat={selectedChat}
+            messageInput={messageInput}
+            connected={connected}
+            loadingChat={loadingChat}
+            onMessageInputChange={handleMessageInputChange}
+            onSendMessage={sendMessage}
+          />
         </section>
 
       </div>
