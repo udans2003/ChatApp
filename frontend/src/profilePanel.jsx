@@ -58,7 +58,7 @@ export default function ProfilePanel({
       setEditing(false);
       setSuccess("Profile updated successfully!");
 
-      onProfileUpdated(data.user);
+      onProfileUpdated(data);
     } catch (err) {
       setError(err.message);
     } finally {

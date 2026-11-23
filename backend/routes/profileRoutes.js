@@ -104,6 +104,15 @@ router.patch("/me", requireAuth, async (req, res) => {
 
     res.json({
       message: "Profile updated successfully",
+      token: jwt.sign(
+        {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "24h" }
+      ),
       user: {
         id: String(user._id),
         username: user.username,

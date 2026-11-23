@@ -131,12 +131,21 @@ function App() {
   const typingSentRef = useRef(false);
   const typingConversationRef = useRef(null);
   const incomingTypingTimeoutRef = useRef(null);
+  const incomingTypingRequestRef = useRef(0);
   const receiptRefreshRef = useRef(Promise.resolve());
   const activeUserId = currentUser?.id || currentUser?._id;
 
 
 
-function handleProfileUpdated(updatedUser) {
+function handleProfileUpdated(data) {
+  const updatedUser = data.user;
+
+  stopTyping();
+
+  if (data.token) {
+    sessionStorage.setItem("chatwave-token", data.token);
+  }
+
   setCurrentUser((previous) => ({
     ...previous,
     ...updatedUser,
@@ -478,11 +487,31 @@ function onPrivateTypingUpdate(data) {
   }
 
   if (data.isTyping === true) {
-    setTypingUser({
-      conversationId: data.conversationId,
-      userId: data.userId,
-      username: data.username,
-    });
+    const requestId = ++incomingTypingRequestRef.current;
+
+    getUsers()
+      .then((usersData) => {
+        if (incomingTypingRequestRef.current !== requestId) return;
+
+        const currentTyper = (usersData.users || []).find(
+          (user) => String(user.id) === String(data.userId)
+        );
+
+        setTypingUser({
+          conversationId: data.conversationId,
+          userId: data.userId,
+          username: currentTyper?.username || data.username,
+        });
+      })
+      .catch(() => {
+        if (incomingTypingRequestRef.current !== requestId) return;
+
+        setTypingUser({
+          conversationId: data.conversationId,
+          userId: data.userId,
+          username: data.username,
+        });
+      });
 
     // Safety fallback if the stop event is missed
     incomingTypingTimeoutRef.current = setTimeout(() => {
@@ -490,6 +519,7 @@ function onPrivateTypingUpdate(data) {
       incomingTypingTimeoutRef.current = null;
     }, 4000);
   } else {
+    incomingTypingRequestRef.current++;
     setTypingUser(null);
   }
 }
@@ -1099,8 +1129,8 @@ async function handleDeleteMessage(messageId) {
 
             <span className="chat-label">
               {selectedChat === "general"
-                ? "PUBLIC ROOM"
-                : "PRIVATE CHAT"}
+                ? "Public Room"
+                : "Private Chat"}
             </span>
           </div>
 
@@ -1151,10 +1181,12 @@ async function handleDeleteMessage(messageId) {
                     
 <div className="message-bubble">
 
-  {/* Sender name */}
-  <span className="message-sender">
-    {isOwnMessage ? "You" : senderName}
-  </span>
+  {/* Sender names help distinguish participants in general chat. */}
+  {selectedChat === "general" && (
+    <span className="message-sender">
+      {isOwnMessage ? "You" : senderName}
+    </span>
+  )}
 
   {/* Edit / Delete menu - only for my private messages */}
   {selectedChat !== "general" &&

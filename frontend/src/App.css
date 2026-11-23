@@ -1766,6 +1766,14 @@ body {
   color: var(--theme-primary-dark);
 }
 
+.chat-label {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
 .chat-item:hover,
 .sidebar-profile-button:hover,
 .message-actions-dropdown button:hover {

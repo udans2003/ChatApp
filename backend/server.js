@@ -10,6 +10,7 @@ const PrivateMessage = require("./models/privateMessage");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const Message = require("./models/message");
+const User = require("./models/user");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const conversationRoutes = require("./routes/conversationRoutes");
@@ -384,13 +385,16 @@ console.log(`${username} joined private room user:${userId}`);
 
       if (!receiverId) return;
 
+      const currentUser = await User.findById(userId).select("username");
+      if (!currentUser) return;
+
       // Send typing status only to the other participant
       io.to(`user:${receiverId.toString()}`).emit(
         "private:typing:update",
         {
           conversationId: conversation._id.toString(),
           userId: userId.toString(),
-          username,
+          username: currentUser.username,
           isTyping,
         }
       );
