@@ -1,4 +1,15 @@
 
+@import "tailwindcss";
+
+@theme {
+  --color-chat-primary: #0f766e;
+  --color-chat-primary-dark: #115e59;
+  --color-chat-ink: #12343b;
+  --color-chat-muted: #5f7c82;
+  --color-chat-border: #d7e8e8;
+  --color-chat-canvas: #f2f8f8;
+}
+
 html,
 body,
 #root {
@@ -7,8 +18,8 @@ body,
 
 body {
   min-width: 320px;
-}
-
-#root {
-  min-height: 100vh;
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: #f2f8f8;
+  color: #12343b;
 }
