@@ -4,7 +4,6 @@ import {
   getMyProfile,
   updateMyProfile,
 } from "./profileApi";
-import "./ProfilePanel.css";
 
 export default function ProfilePanel({
   onClose,
@@ -17,6 +16,30 @@ export default function ProfilePanel({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [profilePicture, setProfilePicture] = useState("");
+  const [originalProfilePicture, setOriginalProfilePicture] = useState("");
+
+  function handlePictureChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setError("Please select a PNG, JPG, or WebP image.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Profile picture must be smaller than 2 MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfilePicture(String(reader.result));
+      setError("");
+    };
+    reader.readAsDataURL(file);
+  }
 
   useEffect(() => {
     let active = true;
@@ -29,6 +52,8 @@ export default function ProfilePanel({
 
         setProfile(data.user);
         setUsername(data.user.username);
+        setProfilePicture(data.user.profilePicture || "");
+        setOriginalProfilePicture(data.user.profilePicture || "");
       } catch (err) {
         if (active) setError(err.message);
       } finally {
@@ -51,10 +76,12 @@ export default function ProfilePanel({
     setSaving(true);
 
     try {
-      const data = await updateMyProfile(username);
+      const data = await updateMyProfile(username, profilePicture);
 
       setProfile(data.user);
       setUsername(data.user.username);
+      setProfilePicture(data.user.profilePicture || "");
+      setOriginalProfilePicture(data.user.profilePicture || "");
       setEditing(false);
       setSuccess("Profile updated successfully!");
 
@@ -67,14 +94,14 @@ export default function ProfilePanel({
   }
 
   return (
-    <div className="profile-overlay">
-      <div className="profile-panel">
-        <div className="profile-panel-header">
-          <h2>My Profile</h2>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/45 p-5">
+      <div className="w-full max-w-[400px] rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900">My Profile</h2>
 
           <button
             type="button"
-            className="profile-close-btn"
+            className="text-2xl text-slate-500 hover:text-slate-800"
             onClick={onClose}
           >
             ×
@@ -82,26 +109,48 @@ export default function ProfilePanel({
         </div>
 
         {loading ? (
-          <p>Loading profile...</p>
+          <p className="text-sm text-slate-500">Loading profile...</p>
         ) : profile ? (
           <>
-            <div className="profile-info">
-              <div className="profile-large-avatar">
-                {profile.username
-                  .charAt(0)
-                  .toUpperCase()}
+            <div className="mb-6 flex flex-col items-center gap-2">
+              <div className="relative h-20 w-20">
+                {profilePicture ? (
+                  <img
+                    src={profilePicture}
+                    alt={`${profile.username}'s profile`}
+                    className="h-20 w-20 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="grid h-20 w-20 place-items-center rounded-full bg-teal-100 text-3xl font-bold text-teal-800">
+                    {profile.username.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
 
-              <h3>{profile.username}</h3>
-              <p>{profile.email}</p>
+              <h3 className="font-bold text-slate-900">{profile.username}</h3>
+              <p className="text-sm text-slate-500">{profile.email}</p>
             </div>
 
             {editing ? (
               <form
                 onSubmit={handleSave}
-                className="profile-edit-form"
+                className="flex flex-col gap-3"
               >
-                <label htmlFor="profile-username">
+                <label
+                  htmlFor="profile-picture"
+                  className="mx-auto cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Change Profile Picture
+                </label>
+                <input
+                  id="profile-picture"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handlePictureChange}
+                  className="hidden"
+                />
+
+                <label htmlFor="profile-username" className="text-xs font-bold text-slate-700">
                   Username
                 </label>
 
@@ -114,22 +163,24 @@ export default function ProfilePanel({
                   minLength={3}
                   maxLength={30}
                   required
+                  className="h-11 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-600"
                 />
 
                 <button
                   type="submit"
                   disabled={saving}
-                  className="profile-save-btn"
+                  className="h-11 rounded-lg bg-teal-700 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-50"
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
 
                 <button
                   type="button"
-                  className="profile-cancel-btn"
+                  className="h-11 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700"
                   onClick={() => {
                     setEditing(false);
                     setUsername(profile.username);
+                    setProfilePicture(originalProfilePicture);
                     setError("");
                   }}
                 >
@@ -139,7 +190,7 @@ export default function ProfilePanel({
             ) : (
               <button
                 type="button"
-                className="profile-edit-btn"
+                className="h-11 w-full rounded-lg bg-teal-700 text-sm font-bold text-white hover:bg-teal-800"
                 onClick={() => {
                   setEditing(true);
                   setSuccess("");

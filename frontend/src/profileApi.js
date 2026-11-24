@@ -17,7 +17,22 @@ async function profileRequest(path, options = {}) {
     },
   });
 
-  const data = await response.json();
+  const responseText = await response.text();
+  let data;
+
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    if (response.status === 413) {
+      throw new Error(
+        "Profile picture is too large. Choose an image smaller than 2 MB."
+      );
+    }
+
+    throw new Error(
+      `Server returned a non-JSON response (HTTP ${response.status}). Check that the backend server is running.`
+    );
+  }
 
   if (!response.ok) {
     throw new Error(data.message || "Request failed");
@@ -30,9 +45,9 @@ export function getMyProfile() {
   return profileRequest("/me");
 }
 
-export function updateMyProfile(username) {
+export function updateMyProfile(username, profilePicture) {
   return profileRequest("/me", {
     method: "PATCH",
-    body: JSON.stringify({ username }),
+    body: JSON.stringify({ username, profilePicture }),
   });
 }
