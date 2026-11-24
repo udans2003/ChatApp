@@ -18,7 +18,15 @@ export default function MessageList({
   onDeleteMessage,
 }) {
   return (
-    <div className="message-list">
+    <div
+      className="flex flex-1 min-h-0 flex-col gap-2 overflow-y-auto px-3 py-4 md:px-7 md:py-6"
+      style={{
+        backgroundImage:
+          'linear-gradient(rgba(11,20,27,.78), rgba(11,20,27,.78)), url("./src/assets/bg.jpg")',
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }}
+    >
       {loadingChat ? (
         <p className="empty-chat">Loading conversation...</p>
       ) : visibleMessages.length === 0 ? (
@@ -40,13 +48,19 @@ export default function MessageList({
           return (
             <div
               key={messageId}
-              className={`message-row ${
-                isOwnMessage ? "own" : ""
+              className={`mb-1 flex items-start ${
+                isOwnMessage ? "justify-end" : "justify-start"
               }`}
             >
-              <div className="message-bubble">
+              <div
+                className={`relative max-w-[82%] rounded-lg px-3 py-2 shadow-sm md:max-w-[72%] ${
+                  isOwnMessage
+                    ? "rounded-tr-sm border border-[#055c4e] bg-[#005c4b] text-[#e9edef]"
+                    : "rounded-tl-sm border border-[#2a3942] bg-[#202c33] text-[#e9edef]"
+                }`}
+              >
                 {selectedChat === "general" && (
-                  <span className="message-sender">
+                  <span className="mb-1 block text-xs font-bold text-[#00a884]">
                     {isOwnMessage ? "You" : senderName}
                   </span>
                 )}
@@ -54,10 +68,10 @@ export default function MessageList({
                 {selectedChat !== "general" &&
                   isOwnMessage &&
                   !message.deleted && (
-                    <div className="message-actions">
+                    <div className="absolute right-2 top-1 z-10">
                       <button
                         type="button"
-                        className="message-menu-button"
+                        className="px-1.5 text-lg leading-none text-slate-500"
                         onClick={() =>
                           setMessageMenuId(
                             messageMenuId === messageId
@@ -70,15 +84,17 @@ export default function MessageList({
                       </button>
 
                       {messageMenuId === messageId && (
-                        <div className="message-actions-dropdown">
+                        <div className="absolute right-0 top-7 min-w-32 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
                           <button
                             type="button"
+                            className="block w-full rounded-md px-3 py-2 text-left text-xs text-slate-700 hover:bg-teal-50"
                             onClick={() => onStartEditing(message)}
                           >
                             ✏️ Edit
                           </button>
                           <button
                             type="button"
+                            className="block w-full rounded-md px-3 py-2 text-left text-xs text-slate-700 hover:bg-teal-50"
                             onClick={() => onDeleteMessage(messageId)}
                           >
                             🗑 Delete
@@ -89,11 +105,11 @@ export default function MessageList({
                   )}
 
                 {message.deleted ? (
-                  <p className="deleted-message">
+                  <p className="m-0 pr-1 text-sm font-semibold italic text-[#8696a0]">
                     This message was deleted
                   </p>
                 ) : editingMessageId === messageId ? (
-                  <div className="message-edit-form">
+                  <div className="mt-2 flex flex-col gap-2">
                     <textarea
                       value={editingText}
                       onChange={(event) =>
@@ -101,11 +117,13 @@ export default function MessageList({
                       }
                       maxLength={5000}
                       rows={2}
+                      className="w-full resize-y rounded-lg border border-slate-300 p-2 text-sm text-slate-800 outline-none focus:border-teal-600"
                     />
-                    <div className="message-edit-buttons">
+                    <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => onSaveEdited(messageId)}
+                        className="rounded-md bg-teal-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={
                           messageActionLoading ||
                           !editingText.trim()
@@ -116,6 +134,7 @@ export default function MessageList({
                       <button
                         type="button"
                         onClick={onCancelEditing}
+                        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={messageActionLoading}
                       >
                         Cancel
@@ -123,7 +142,7 @@ export default function MessageList({
                     </div>
                   </div>
                 ) : (
-                  <p>
+                  <p className="m-0 whitespace-pre-wrap break-words leading-relaxed">
                     {message.text}
                     {message.edited && (
                       <span className="edited-label"> (edited)</span>
@@ -131,8 +150,8 @@ export default function MessageList({
                   </p>
                 )}
 
-                <div className="message-footer">
-                  <span className="message-time">
+                <div className="mt-1 flex min-h-4 items-center justify-end gap-1.5">
+                  <span className="text-[10px] text-[#8696a0]">
                     {message.time ||
                       (message.createdAt
                         ? new Date(
@@ -146,9 +165,7 @@ export default function MessageList({
 
                   {selectedChat !== "general" && isOwnMessage && (
                     <span
-                      className={`message-receipt ${
-                        message.read === true ? "is-read" : "is-sent"
-                      }`}
+                      className="flex items-center gap-1 text-[10px] text-[#53bdeb]"
                       title={
                         message.read === true
                           ? "Read by recipient"
@@ -174,13 +191,13 @@ export default function MessageList({
         typingUser &&
         String(typingUser.conversationId) ===
           String(selectedChat) && (
-          <div className="typing-indicator">
-            <div className="typing-dots">
-              <span></span>
-              <span></span>
-              <span></span>
+          <div className="flex w-fit items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <div className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-700"></span>
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-700"></span>
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-700"></span>
             </div>
-            <span className="typing-text">
+            <span className="text-xs italic text-slate-500">
               {typingUser.username} is typing...
             </span>
           </div>
