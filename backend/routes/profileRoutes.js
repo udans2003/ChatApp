@@ -35,7 +35,7 @@ function requireAuth(req, res, next) {
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .select("_id username email");
+      .select("_id username email profilePicture");
 
     if (!user) {
       return res.status(404).json({
@@ -48,6 +48,7 @@ router.get("/me", requireAuth, async (req, res) => {
         id: String(user._id),
         username: user.username,
         email: user.email,
+        profilePicture: user.profilePicture || "",
       },
     });
   } catch {
@@ -60,7 +61,7 @@ router.get("/me", requireAuth, async (req, res) => {
 // Update my profile
 router.patch("/me", requireAuth, async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, profilePicture } = req.body;
 
     if (typeof username !== "string") {
       return res.status(400).json({
@@ -79,6 +80,30 @@ router.patch("/me", requireAuth, async (req, res) => {
       });
     }
 
+    if (
+      profilePicture !== undefined &&
+      typeof profilePicture !== "string"
+    ) {
+      return res.status(400).json({
+        message: "Profile picture must be a valid image",
+      });
+    }
+
+    if (
+      profilePicture &&
+      !/^data:image\/(png|jpeg|webp);base64,/i.test(profilePicture)
+    ) {
+      return res.status(400).json({
+        message: "Only PNG, JPG, and WebP images are supported",
+      });
+    }
+
+    if (profilePicture?.length > 10_000_000) {
+      return res.status(400).json({
+        message: "Profile picture is too large",
+      });
+    }
+
     const existingUser = await User.findOne({
       username: cleanUsername,
       _id: { $ne: req.userId },
@@ -90,11 +115,16 @@ router.patch("/me", requireAuth, async (req, res) => {
       });
     }
 
+    const update = { username: cleanUsername };
+    if (typeof profilePicture === "string") {
+      update.profilePicture = profilePicture;
+    }
+
     const user = await User.findByIdAndUpdate(
       req.userId,
-      { username: cleanUsername },
+      update,
       { new: true, runValidators: true }
-    ).select("_id username email");
+    ).select("_id username email profilePicture");
 
     if (!user) {
       return res.status(404).json({
@@ -109,6 +139,7 @@ router.patch("/me", requireAuth, async (req, res) => {
           id: user._id,
           username: user.username,
           email: user.email,
+          profilePicture: user.profilePicture || "",
         },
         process.env.JWT_SECRET,
         { expiresIn: "24h" }
@@ -117,6 +148,7 @@ router.patch("/me", requireAuth, async (req, res) => {
         id: String(user._id),
         username: user.username,
         email: user.email,
+        profilePicture: user.profilePicture || "",
       },
     });
   } catch (error) {
