@@ -20,19 +20,23 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/profile", profileRoutes);
 
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    message: "API route not found",
+  });
+});
+
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-    ],
+    origin: true,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -441,7 +445,7 @@ console.log(`${username} joined private room user:${userId}`);
 });
 
 
-const PORT = 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 async function startServer() {
   try {
@@ -452,6 +456,19 @@ async function startServer() {
     await mongoose.connect(process.env.MONGODB_URI);
 
     console.log("Connected to MongoDB successfully!");
+
+    server.once("error", (error) => {
+      if (error.code === "EADDRINUSE") {
+        console.error(
+          `Port ${PORT} is already in use. Another ChatApp backend server is likely already running.`
+        );
+        process.exitCode = 1;
+        return;
+      }
+
+      console.error("ChatWave server failed:", error);
+      process.exitCode = 1;
+    });
 
     server.listen(PORT, () => {
       console.log(`ChatWave server running on port ${PORT}`);
