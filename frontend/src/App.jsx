@@ -8,7 +8,6 @@ import MessageList from "./components/MessageList";
 import MessageComposer from "./components/MessageComposer";
 import ConversationHeader from "./components/ConversationHeader";
 import ProfilePanel from "./profilePanel";
-import "./chatwave-ui.css";
 
 import {
   getUsers,
@@ -20,7 +19,6 @@ import {
   deletePrivateMessage,
 } from "./services/chatApi";
 
-import "./App.css";
 
 const socket = io("http://localhost:5000", {
   autoConnect: false,
@@ -845,7 +843,7 @@ async function handleDeleteMessage(messageId) {
   }
 
   return (
-    <main className="chat-page">
+    <main className="mx-auto flex h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-[1180px] flex-col overflow-hidden rounded-lg border border-[#2a3942] bg-[#111b21] shadow-[0_18px_50px_rgba(0,0,0,.35)] max-md:h-dvh max-md:w-full max-md:rounded-none">
       <ChatHeader
         currentUser={currentUser}
         username={username}
@@ -853,7 +851,7 @@ async function handleDeleteMessage(messageId) {
         onLogout={handleLogout}
       />
 
-      <div className="chat-layout">
+      <div className="grid min-h-0 flex-1 grid-cols-[300px_minmax(0,1fr)] overflow-hidden max-md:grid-cols-[86px_minmax(0,1fr)]">
         <ChatSidebar
           username={username}
           currentUser={currentUser}
@@ -868,7 +866,7 @@ async function handleDeleteMessage(messageId) {
           onOpenProfile={() => setShowProfile(true)}
         />
 
-        <section className="chat-content">
+        <section className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-[#0b141b]">
           <ConversationHeader
             selectedChat={selectedChat}
             selectedPartner={selectedPartner}
@@ -876,7 +874,7 @@ async function handleDeleteMessage(messageId) {
           />
 
           {error && (
-            <div className="chat-error">
+            <div className="flex justify-between gap-3 bg-red-50 px-4 py-2.5 text-xs text-red-700">
               {error}
               <button
                 onClick={() => setError("")}
