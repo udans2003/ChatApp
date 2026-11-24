@@ -60,7 +60,7 @@ router.post("/", async (req, res) => {
         new: true,
         runValidators: true,
       }
-    ).populate("participants", "username email");
+    ).populate("participants", "username email profilePicture");
 
     return res.status(200).json({
       message: "Conversation ready",
@@ -87,7 +87,7 @@ router.get("/", async (req, res) => {
     const conversations = await Conversation.find({
       participants: currentUserId,
     })
-      .populate("participants", "username email")
+      .populate("participants", "username email profilePicture")
       .lean();
 
     // Add unread counts and latest message details
