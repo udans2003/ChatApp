@@ -36,7 +36,16 @@ function Auth({ onAuthSuccess }) {
         body: JSON.stringify(body),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          "Server returned a non-JSON response. Check that the backend is running."
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Authentication failed");
@@ -62,26 +71,26 @@ function Auth({ onAuthSuccess }) {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-teal-50 to-slate-100 p-6">
+      <div className="w-full max-w-[420px] rounded-2xl border border-slate-100 bg-white p-7 shadow-xl sm:p-9">
 
-        <div className="auth-logo">ChatWave</div>
+        <div className="text-lg font-extrabold text-teal-700">ChatWave</div>
 
-        <h2>
+        <h2 className="mt-5 text-2xl font-bold text-slate-900">
           {isLogin ? "Welcome Back!" : "Create Your Account"}
         </h2>
 
-        <p className="auth-subtitle">
+        <p className="mt-2 text-sm text-slate-500">
           {isLogin
             ? "Log in to continue chatting with your friends."
             : "Join ChatWave and start connecting."}
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form className="mt-6" onSubmit={handleSubmit}>
 
           {!isLogin && (
-            <div className="auth-field">
-              <label>Username</label>
+            <div className="mb-4">
+              <label className="mb-1.5 block text-xs font-bold text-slate-700">Username</label>
               <input
                 type="text"
                 placeholder="Enter your username"
@@ -90,23 +99,25 @@ function Auth({ onAuthSuccess }) {
                 minLength={3}
                 maxLength={30}
                 required
+                className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
               />
             </div>
           )}
 
-          <div className="auth-field">
-            <label>Email Address</label>
+          <div className="mb-4">
+            <label className="mb-1.5 block text-xs font-bold text-slate-700">Email Address</label>
             <input
               type="email"
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
             />
           </div>
 
-          <div className="auth-field">
-            <label>Password</label>
+          <div className="mb-4">
+            <label className="mb-1.5 block text-xs font-bold text-slate-700">Password</label>
             <input
               type="password"
               placeholder="Enter your password"
@@ -114,15 +125,16 @@ function Auth({ onAuthSuccess }) {
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
               required
+              className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-100"
             />
           </div>
 
-          {error && <p className="auth-error">{error}</p>}
-          {success && <p className="auth-success">{success}</p>}
+          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {success && <p className="mt-3 text-sm text-emerald-600">{success}</p>}
 
           <button
             type="submit"
-            className="auth-submit"
+            className="mt-2 h-11 w-full rounded-lg bg-teal-700 text-sm font-bold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={loading}
           >
             {loading
@@ -134,12 +146,12 @@ function Auth({ onAuthSuccess }) {
 
         </form>
 
-        <p className="auth-switch">
+        <p className="mt-5 text-center text-xs text-slate-500">
           {isLogin
             ? "Don't have an account?"
             : "Already have an account?"}
 
-          <button type="button" onClick={switchMode}>
+          <button type="button" className="ml-1 font-bold text-teal-700" onClick={switchMode}>
             {isLogin ? "Sign Up" : "Log In"}
           </button>
         </p>
