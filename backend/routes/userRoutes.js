@@ -12,7 +12,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const users = await User.find({
       _id: { $ne: req.user.id },
     })
-      .select("_id username email")
+      .select("_id username email profilePicture")
       .sort({ username: 1 })
       .lean();
 
@@ -21,6 +21,7 @@ router.get("/", authMiddleware, async (req, res) => {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
+        profilePicture: user.profilePicture || "",
       })),
     });
   } catch (error) {
